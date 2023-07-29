@@ -79,6 +79,24 @@ class MultiTaskNet(nn.Module):
         #******************* YOUR CODE HERE *********************
         #********************************************************
 
+        self.fact_U = self.regr_U = ScaledEmbedding(num_embeddings=num_users, embedding_dim=embedding_dim)
+        self.fact_Q = self.regr_Q = ScaledEmbedding(num_embeddings=num_items, embedding_dim=embedding_dim)
+        # Biases for users and items
+        self.fact_A = self.regr_A = ZeroEmbedding(num_embeddings=num_users, embedding_dim=embedding_dim)
+        self.fact_B = self.regr_B = ZeroEmbedding(num_embeddings=num_items, embedding_dim=embedding_dim)
+
+        # Embeddings for regression and factorization shared if embedding_sharing=True
+        if not embedding_sharing:
+            self.regr_U = ScaledEmbedding(num_embeddings=num_users, embedding_dim=embedding_dim)
+            self.regr_Q = ScaledEmbedding(num_embeddings=num_items, embedding_dim=embedding_dim)
+            self.regr_A = ZeroEmbedding(num_embeddings=num_users, embedding_dim=embedding_dim)
+            self.regr_B = ZeroEmbedding(num_embeddings=num_items, embedding_dim=embedding_dim)
+
+        # Define the MLP
+        self.linear1 = nn.Linear(layer_sizes[0], layer_sizes[1])
+        self.activation = nn.ReLU()
+        # Output the predicted score (size 1)
+        self.linear2 = nn.Linear(layer_sizes[1], 1)
 
         #********************************************************
         #********************************************************
@@ -107,7 +125,20 @@ class MultiTaskNet(nn.Module):
         #********************************************************
         #******************* YOUR CODE HERE *********************
         #********************************************************
+        
+        # Compute embeddings for users and items
+        user_embedding = self.fact_U(user_ids)
+        item_embedding = self.fact_Q(item_ids)
+        user_bias = self.fact_A(user_ids)
+        item_bias = self.fact_B(item_ids)
 
+        predictions = (user_embedding * item_embedding + user_bias + item_bias).sum(1)
+
+        interaction = torch.cat([user_embedding, item_embedding, user_embedding*item_embedding], dim=1)
+
+        x = self.linear1(interaction)
+        x = self.activation(x)
+        score = self.linear2(x).squeeze()
 
         #********************************************************
         #********************************************************
