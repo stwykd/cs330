@@ -63,6 +63,7 @@ class DataGenerator(IterableDataset):
         self.dim_input = np.prod(self.img_size)
         self.dim_output = self.num_classes
 
+
         character_folders = [
             os.path.join(data_folder, family, character)
             for family in os.listdir(data_folder)
@@ -134,7 +135,11 @@ class DataGenerator(IterableDataset):
 
         #############################
         #### YOUR CODE GOES HERE ####
-        pass
+
+        get_images(self.folders, [folder.split('/')[-1] for folder in self.folders], self.num_samples_per_class)
+
+
+
         #############################
 
     def __iter__(self):
