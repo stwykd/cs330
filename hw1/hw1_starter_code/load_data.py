@@ -134,26 +134,32 @@ class DataGenerator(IterableDataset):
         """
 
         #############################
+
+        # 1. Sample N different characters from either the specified train, test, or validation folder
+        
         char_folders = random.sample(self.folders, self.num_classes)
-
         labels = np.eye(self.num_classes)
-        support_label_path_pairs = get_images(char_folders, labels, nb_samples=self.num_samples_per_class-1, shuffle=False)
-        query_label_path_pairs = get_images(char_folders, labels, nb_samples=1, shuffle=True)
 
-        # Initialize lists for storing images and labels
+        # 2. Load K + 1 images per character and collect the associated labels, using K images
+        # per class for the support set and 1 image per class for the query set.
+
+        support_label_path_pairs = get_images(char_folders, labels, nb_samples=self.num_samples_per_class-1, shuffle=False)
+        # Shuffle the order of examples in the query set, as otherwise the network
+        # can learn to output the same sequence of classes and achieve 100% accuracy, without
+        # actually learning to recognize the images
+        query_label_path_pairs = get_images(char_folders, labels, nb_samples=1, shuffle=True)
         support_images, support_labels, query_images, query_labels = [], [], [], []
 
-        # Get support images and labels
         for label, path in support_label_path_pairs:
             support_images.append(self.image_file_to_array(path, -1))
             support_labels.append(label)
-
-        # Get query images and labels
         for label, path in query_label_path_pairs:
             query_images.append(self.image_file_to_array(path, -1))
             query_labels.append(label)
 
-        # Convert lists to tensors and reshape
+        # 3. Format the data and return two tensors, one of flattened images with shape [K +
+        # 1, N, 784] and one of one-hot labels [K + 1, N, N].
+        
         images = torch.tensor(np.concatenate((support_images, query_images))).view(self.num_samples_per_class, self.num_classes, 784)
         labels = torch.tensor(np.concatenate((support_labels, query_labels))).view(self.num_samples_per_class, self.num_classes, self.num_classes)
 
