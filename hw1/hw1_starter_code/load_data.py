@@ -134,11 +134,30 @@ class DataGenerator(IterableDataset):
         """
 
         #############################
-        #### YOUR CODE GOES HERE ####
+        char_folders = random.sample(self.folders, self.num_classes)
 
-        get_images(self.folders, [folder.split('/')[-1] for folder in self.folders], self.num_samples_per_class)
+        labels = np.eye(self.num_classes)
+        support_label_path_pairs = get_images(char_folders, labels, nb_samples=self.num_samples_per_class-1, shuffle=False)
+        query_label_path_pairs = get_images(char_folders, labels, nb_samples=1, shuffle=True)
 
+        # Initialize lists for storing images and labels
+        support_images, support_labels, query_images, query_labels = [], [], [], []
 
+        # Get support images and labels
+        for label, path in support_label_path_pairs:
+            support_images.append(self.image_file_to_array(path, -1))
+            support_labels.append(label)
+
+        # Get query images and labels
+        for label, path in query_label_path_pairs:
+            query_images.append(self.image_file_to_array(path, -1))
+            query_labels.append(label)
+
+        # Convert lists to tensors and reshape
+        images = torch.tensor(np.concatenate((support_images, query_images))).view(self.num_samples_per_class, self.num_classes, 784)
+        labels = torch.tensor(np.concatenate((support_labels, query_labels))).view(self.num_samples_per_class, self.num_classes, self.num_classes)
+
+        return images, labels
 
         #############################
 
