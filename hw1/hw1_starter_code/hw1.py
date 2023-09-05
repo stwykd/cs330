@@ -51,15 +51,18 @@ class MANN(nn.Module):
         # 1, N, 784] and a label tensor of shape [B, K + 1, N, N] and output labels of shape
         # [B, K + 1, N, N]. The layers to use have already been defined for you in the init
         # function. Hint: Remember to pass zeros, not the ground truth labels for the final N examples.
-        input = torch.cat((input_images, input_labels.float()), dim=-1)
-        # [B, (K+1) * N, 784]
-        input = input.view(input.size(0), -1, input.size(-1))
 
-        output1, _ = self.layer1(input)
-        output2, _ = self.layer2(output1)
-        out = output2.view((input.shape[0], self.samples_per_class, self.num_classes, self.num_classes))
 
-        return out
+        support_input = torch.cat((input_images[:, :-1, :, :], input_labels[:, :-1, :, :]), dim=-1)  # [B, K+1, N, 784 + N]
+        # Passe query labels as 0
+        query_input = torch.cat((input_images[:, -1:, :, :], torch.zeros_like(input_labels[:, -1:, :, :])), dim=-1)  # [B, 1, N, 784 + N]
+
+        input = torch.cat((support_input, query_input), dim=1)  # [B, K + 1, N, 784 + N]
+        input = input.view((input_images.shape[0], -1, 784 + self.num_classes))  # [B, (K+1) * N, 784 + N]
+
+        output1, _ = self.layer1(input)  # [B, K * N, size of the model]
+        output2, _ = self.layer2(output1)  # [B, K * N, N]
+        return output2.view((input_images.shape[0], -1,  self.num_classes, self.num_classes))
         #############################
 
     def loss_function(self, preds, labels):
@@ -75,7 +78,14 @@ class MANN(nn.Module):
         """
         #############################
         #### YOUR CODE GOES HERE ####
+        # Fill in the function called loss function in the MANN class which takes as input the
+        # [B, K +1, N, N] labels and [B, K +1, N, N] predicted labels and computes the cross
+        # entropy loss only on the N test images.
 
+        test_preds = preds[:, -1, :, :].reshape(-1, self.num_classes)
+        test_labels = labels[:, -1, :, :].argmax(dim=-1).view(-1)
+
+        return F.cross_entropy(test_preds, test_labels)
         #############################
 
 

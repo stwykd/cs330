@@ -138,7 +138,7 @@ class DataGenerator(IterableDataset):
         # 1. Sample N different characters from either the specified train, test, or validation folder
         
         char_folders = random.sample(self.folders, self.num_classes)
-        labels = np.eye(self.num_classes)
+        labels = np.eye(self.num_classes, dtype=np.float32)
 
         # 2. Load K + 1 images per character and collect the associated labels, using K images
         # per class for the support set and 1 image per class for the query set.
