@@ -57,7 +57,9 @@ class MANN(nn.Module):
 
         output1, _ = self.layer1(input)
         output2, _ = self.layer2(output1)
-        return output2
+        out = output2.view((input.shape[0], self.samples_per_class, self.num_classes, self.num_classes))
+
+        return out
         #############################
 
     def loss_function(self, preds, labels):
@@ -73,7 +75,7 @@ class MANN(nn.Module):
         """
         #############################
         #### YOUR CODE GOES HERE ####
-        pass
+
         #############################
 
 
