@@ -46,7 +46,18 @@ class MANN(nn.Module):
         """
         #############################
         #### YOUR CODE GOES HERE ####
-        pass
+
+        # Fill in the call function of the MANN class to take in image tensor of shape [B, K +
+        # 1, N, 784] and a label tensor of shape [B, K + 1, N, N] and output labels of shape
+        # [B, K + 1, N, N]. The layers to use have already been defined for you in the init
+        # function. Hint: Remember to pass zeros, not the ground truth labels for the final N examples.
+        input = torch.cat((input_images, input_labels.float()), dim=-1)
+        # [B, (K+1) * N, 784]
+        input = input.view(input.size(0), -1, input.size(-1))
+
+        output1, _ = self.layer1(input)
+        output2, _ = self.layer2(output1)
+        return output2
         #############################
 
     def loss_function(self, preds, labels):
